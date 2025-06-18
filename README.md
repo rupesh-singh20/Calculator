@@ -1,2 +1,2 @@
-#  Simple Ui based Calculator 
+#   Calculator Using HTML,CSS,JAVASCRIPT
 My First Project
