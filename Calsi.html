@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Calculator</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background: #e9f0f2;
+        font-family: "Poppins", sans-serif;
+      }
+
+      .calculator {
+        background: #1c1c1c;
+        border-radius: 25px;
+        padding: 20px;
+        width: 90%;
+        max-width: 340px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        display: flex;
+        flex-direction: column;
+      }
+
+      .display {
+        background: #f5b73a;
+        color: #000;
+        font-size: 1.8rem;
+        text-align: right;
+        padding: 15px 10px;
+        border-radius: 10px;
+        overflow-x: auto;
+        min-height: 50px;
+        margin-bottom: 10px;
+        font-weight: bold;
+        transition: background 0.3s, color 0.3s;
+      }
+
+      .display.off {
+        background: #000;
+        color: #333;
+      }
+
+      .history-container {
+        position: relative;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .history-btn {
+        background: #4caf50;
+        color: white;
+        border: none;
+        padding: 6px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .history-dropdown {
+        display: none;
+        position: absolute;
+        top: 35px;
+        right: 0;
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        width: 100%;
+        max-height: 150px;
+        overflow-y: auto;
+        z-index: 10;
+        font-size: 14px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .history-dropdown div {
+        padding: 8px;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+
+      .history-dropdown div:hover {
+        background: #f0f0f0;
+      }
+
+      .buttons {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        width: 100%;
+      }
+
+      button {
+        background: #2b4e55;
+        color: white;
+        border: none;
+        font-size: 1.1rem;
+        padding: 15px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      button:hover {
+        background: #3b6a74;
+      }
+
+      .red {
+        background: #e74c3c;
+      }
+
+      .red:hover {
+        background: #ff6656;
+      }
+
+      .green {
+        background: #27ae60;
+      }
+
+      .green:hover {
+        background: #38c172;
+      }
+
+      .span-two {
+        grid-column: span 4;
+        font-size: xx-large;
+        font-weight: 600;
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* Mobile responsive adjustments */
+      @media (max-width: 480px) {
+        .calculator {
+          padding: 15px;
+          width: 95%;
+        }
+        .display {
+          font-size: 1.4rem;
+          padding: 10px;
+        }
+        button {
+          font-size: 1rem;
+          padding: 12px;
+        }
+        .history-btn {
+          font-size: 12px;
+          padding: 5px 8px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="calculator">
+      <div class="display" id="display">0</div>
+
+      <div class="history-container">
+        <button class="history-btn" id="historyBtn">History ▼</button>
+        <div class="history-dropdown" id="historyDropdown"></div>
+      </div>
+
+      <div class="buttons">
+        <button>MRC</button>
+        <button>M-</button>
+        <button>M+</button>
+        <button class="red" id="on">OFF</button>
+
+        <button id="sqrt">√</button>
+        <button id="percent">%</button>
+        <button id="sign">+/-</button>
+        <button class="red" id="ce">CE</button>
+
+        <button>7</button>
+        <button>8</button>
+        <button>9</button>
+        <button>÷</button>
+
+        <button>4</button>
+        <button>5</button>
+        <button>6</button>
+        <button>×</button>
+
+        <button>1</button>
+        <button>2</button>
+        <button>3</button>
+        <button>-</button>
+
+        <button>0</button>
+        <button>.</button>
+        <button id="del">⌫</button>
+        <button>+</button>
+
+        <button class="span-two green" id="equals">=</button>
+      </div>
+    </div>
+
+    <script>
+      const display = document.getElementById("display");
+      const historyBtn = document.getElementById("historyBtn");
+      const historyDropdown = document.getElementById("historyDropdown");
+      const onBtn = document.getElementById("on");
+      const allButtons = document.querySelectorAll(".buttons button");
+      let calculatorOn = true;
+
+      // Load history from localStorage
+      let history = JSON.parse(localStorage.getItem("calcHistory")) || [];
+
+      // Add event listeners to buttons
+      document.querySelectorAll(".buttons button").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          if (!calculatorOn || btn.id === "on") return;
+
+          const val = btn.textContent;
+
+          if (!isNaN(val) || val === ".") {
+            if (display.textContent === "0") display.textContent = val;
+            else display.textContent += val;
+          } else if (["+", "-", "×", "÷"].includes(val)) {
+            display.textContent += ` ${val} `;
+          } else if (val === "=") {
+            try {
+              const exp = display.textContent
+                .replace(/×/g, "*")
+                .replace(/÷/g, "/");
+              const result = eval(exp);
+              const record = `${display.textContent} = ${result}`;
+              history.push(record);
+              localStorage.setItem("calcHistory", JSON.stringify(history));
+              display.textContent = result;
+              updateHistory();
+            } catch {
+              display.textContent = "Error";
+            }
+          } else if (val === "CE") {
+            display.textContent = "0";
+          } else if (val === "√") {
+            display.textContent = Math.sqrt(parseFloat(display.textContent));
+          } else if (val === "%") {
+            display.textContent = parseFloat(display.textContent) / 100;
+          } else if (val === "+/-") {
+            display.textContent = parseFloat(display.textContent) * -1;
+          } else if (val === "⌫") {
+            display.textContent = display.textContent.slice(0, -1) || "0";
+          }
+        });
+      });
+
+      // Power ON/OFF functionality
+      onBtn.addEventListener("click", () => {
+        calculatorOn = !calculatorOn;
+        if (calculatorOn) {
+          onBtn.textContent = "OFF";
+          display.classList.remove("off");
+          display.textContent = "0";
+          enableButtons(true);
+        } else {
+          onBtn.textContent = "ON";
+          display.classList.add("off");
+          display.textContent = "";
+          enableButtons(false);
+        }
+      });
+
+      function enableButtons(state) {
+        allButtons.forEach((btn) => {
+          if (btn.id !== "on") btn.disabled = !state;
+        });
+      }
+
+      function updateHistory() {
+        historyDropdown.innerHTML = "";
+        history
+          .slice()
+          .reverse()
+          .forEach((item) => {
+            const div = document.createElement("div");
+            div.textContent = item;
+            div.onclick = () =>
+              (display.textContent = item.split("=")[1].trim());
+            historyDropdown.appendChild(div);
+          });
+      }
+
+      historyBtn.addEventListener("click", () => {
+        if (!calculatorOn) return;
+        historyDropdown.style.display =
+          historyDropdown.style.display === "block" ? "none" : "block";
+      });
+
+      window.addEventListener("click", (e) => {
+        if (!historyBtn.contains(e.target)) {
+          historyDropdown.style.display = "none";
+        }
+      });
+
+      updateHistory();
+    </script>
+  </body>
+</html>
